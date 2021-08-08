@@ -3,14 +3,48 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations.Builders;
 using YouBikeAPI.Data;
 
 namespace YouBikeAPI.Migrations
 {
 	[DbContext(typeof(AppDbContext))]
-	internal class AppDbContextModelSnapshot : ModelSnapshot
+	[Migration("20210801093302_add history route table")]
+	public class addhistoryroutetable : Migration
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		protected override void Up(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.CreateTable("HistoryRoutes", (ColumnsBuilder table) => new
+			{
+				Id = table.Column<int>("int").Annotation("SqlServer:Identity", "1, 1"),
+				Source = table.Column<Guid>("uniqueidentifier"),
+				Destination = table.Column<Guid>("uniqueidentifier"),
+				ApplicationUserId = table.Column<string>("nvarchar(450)", null, null, rowVersion: false, null, nullable: true),
+				BikeId = table.Column<int>("int"),
+				CurrentRoute = table.Column<bool>("bit"),
+				BorrowTime = table.Column<DateTime>("datetime2"),
+				ReturnTime = table.Column<DateTime>("datetime2")
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_HistoryRoutes", x => x.Id);
+				table.ForeignKey("FK_HistoryRoutes_AspNetUsers_ApplicationUserId", x => x.ApplicationUserId, "AspNetUsers", "Id", null, ReferentialAction.NoAction, ReferentialAction.Restrict);
+				table.ForeignKey("FK_HistoryRoutes_Bikes_BikeId", x => x.BikeId, "Bikes", "Id", null, ReferentialAction.NoAction, ReferentialAction.Cascade);
+			});
+			migrationBuilder.UpdateData("AspNetRoles", "Id", "308660dc-ae51-480f-824d-7dca6714c3e2", "ConcurrencyStamp", "33133bce-8e20-4cb7-aad6-4eeba4c5b3b1");
+			migrationBuilder.UpdateData("AspNetUsers", "Id", "90184155-dee0-40c9-bb1e-b5ed07afc04e", new string[3] { "ConcurrencyStamp", "PasswordHash", "SecurityStamp" }, new object[3] { "b52a0cbf-b328-45c2-b019-11ad2e8dddaa", "AQAAAAEAACcQAAAAENLNfVQQakDo3WKE0tp/hUDYNgcOziVe9q7h8WEXBkXWA5gPVRjUfzmNIEpxCIfMhA==", "5e95556f-b253-416b-8c44-b89acc7cdfe1" });
+			migrationBuilder.CreateIndex("IX_HistoryRoutes_ApplicationUserId", "HistoryRoutes", "ApplicationUserId");
+			migrationBuilder.CreateIndex("IX_HistoryRoutes_BikeId", "HistoryRoutes", "BikeId");
+		}
+
+		protected override void Down(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.DropTable("HistoryRoutes");
+			migrationBuilder.UpdateData("AspNetRoles", "Id", "308660dc-ae51-480f-824d-7dca6714c3e2", "ConcurrencyStamp", "3517609d-a193-433f-9efc-1abdcc4ea01e");
+			migrationBuilder.UpdateData("AspNetUsers", "Id", "90184155-dee0-40c9-bb1e-b5ed07afc04e", new string[3] { "ConcurrencyStamp", "PasswordHash", "SecurityStamp" }, new object[3] { "6c81ef4d-f838-44f9-8b9c-e9f9e14089e1", "AQAAAAEAACcQAAAAEBTnaFLWuGHHC3FPhrrfSGnigpyj8/LRUQ2gKVaUNIGFPGYtq3pfEPAefbtu2niy6Q==", "16e323d8-05c9-47d3-9806-f476f18ef846" });
+		}
+
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 			modelBuilder.HasAnnotation("Relational:MaxIdentifierLength", 128).HasAnnotation("ProductVersion", "5.0.6").HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 			modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", delegate(EntityTypeBuilder b)
@@ -26,7 +60,7 @@ namespace YouBikeAPI.Migrations
 				b.HasData(new
 				{
 					Id = "308660dc-ae51-480f-824d-7dca6714c3e2",
-					ConcurrencyStamp = "f73f43a7-8a7e-4aad-8744-3258302931b3",
+					ConcurrencyStamp = "33133bce-8e20-4cb7-aad6-4eeba4c5b3b1",
 					Name = "Admin",
 					NormalizedName = "ADMIN"
 				});
@@ -94,7 +128,6 @@ namespace YouBikeAPI.Migrations
 				b.Property<bool>("EmailConfirmed").HasColumnType("bit");
 				b.Property<bool>("LockoutEnabled").HasColumnType("bit");
 				b.Property<DateTimeOffset?>("LockoutEnd").HasColumnType("datetimeoffset");
-				b.Property<Guid?>("MoneyId").HasColumnType("uniqueidentifier");
 				b.Property<string>("NormalizedEmail").HasMaxLength(256).HasColumnType("nvarchar(256)");
 				b.Property<string>("NormalizedUserName").HasMaxLength(256).HasColumnType("nvarchar(256)");
 				b.Property<string>("PasswordHash").HasColumnType("nvarchar(max)");
@@ -104,7 +137,6 @@ namespace YouBikeAPI.Migrations
 				b.Property<bool>("TwoFactorEnabled").HasColumnType("bit");
 				b.Property<string>("UserName").HasMaxLength(256).HasColumnType("nvarchar(256)");
 				b.HasKey("Id");
-				b.HasIndex("MoneyId");
 				b.HasIndex("NormalizedEmail").HasDatabaseName("EmailIndex");
 				b.HasIndex("NormalizedUserName").IsUnique().HasDatabaseName("UserNameIndex")
 					.HasFilter("[NormalizedUserName] IS NOT NULL");
@@ -113,16 +145,16 @@ namespace YouBikeAPI.Migrations
 				{
 					Id = "90184155-dee0-40c9-bb1e-b5ed07afc04e",
 					AccessFailedCount = 0,
-					ConcurrencyStamp = "61d1907d-4176-45f8-854f-791b8c02e8e7",
+					ConcurrencyStamp = "b52a0cbf-b328-45c2-b019-11ad2e8dddaa",
 					Email = "admin@xx.com",
 					EmailConfirmed = true,
 					LockoutEnabled = false,
 					NormalizedEmail = "ADMIN@XX.COM",
 					NormalizedUserName = "ADMIN@XX.COM",
-					PasswordHash = "AQAAAAEAACcQAAAAEEj6SCMnp3KIsd5cjwZ3B15XJKAfCDIuj3+jCHihdn7xIsIBUXsTbCsvQb2EQEwsXg==",
+					PasswordHash = "AQAAAAEAACcQAAAAENLNfVQQakDo3WKE0tp/hUDYNgcOziVe9q7h8WEXBkXWA5gPVRjUfzmNIEpxCIfMhA==",
 					PhoneNumber = "123456789",
 					PhoneNumberConfirmed = false,
-					SecurityStamp = "25525449-b590-4cef-b9a9-5ed274d5cc6c",
+					SecurityStamp = "5e95556f-b253-416b-8c44-b89acc7cdfe1",
 					TwoFactorEnabled = false,
 					UserName = "admin@xx.com"
 				});
@@ -163,7 +195,6 @@ namespace YouBikeAPI.Migrations
 				b.Property<string>("ApplicationUserId").HasColumnType("nvarchar(450)");
 				b.Property<int>("BikeId").HasColumnType("int");
 				b.Property<DateTime>("BorrowTime").HasColumnType("datetime2");
-				b.Property<decimal>("Cost").HasColumnType("decimal(18,4)");
 				b.Property<bool>("CurrentRoute").HasColumnType("bit");
 				b.Property<Guid>("Destination").HasColumnType("uniqueidentifier");
 				b.Property<DateTime>("ReturnTime").HasColumnType("datetime2");
@@ -172,13 +203,6 @@ namespace YouBikeAPI.Migrations
 				b.HasIndex("ApplicationUserId");
 				b.HasIndex("BikeId");
 				b.ToTable("HistoryRoutes");
-			});
-			modelBuilder.Entity("YouBikeAPI.Models.Money", delegate(EntityTypeBuilder b)
-			{
-				b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
-				b.Property<decimal>("Value").HasColumnType("decimal(18,4)");
-				b.HasKey("Id");
-				b.ToTable("Money");
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.Price", delegate(EntityTypeBuilder b)
 			{
@@ -220,11 +244,6 @@ namespace YouBikeAPI.Migrations
 				b.HasOne("YouBikeAPI.Models.ApplicationUser", null).WithMany().HasForeignKey("UserId")
 					.OnDelete(DeleteBehavior.Cascade)
 					.IsRequired();
-			});
-			modelBuilder.Entity("YouBikeAPI.Models.ApplicationUser", delegate(EntityTypeBuilder b)
-			{
-				b.HasOne("YouBikeAPI.Models.Money", "Money").WithMany().HasForeignKey("MoneyId");
-				b.Navigation("Money");
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.Bike", delegate(EntityTypeBuilder b)
 			{

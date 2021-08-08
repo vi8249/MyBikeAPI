@@ -1,91 +1,128 @@
-﻿using FluentValidation;
-using FluentValidation.AspNetCore;
+using System;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.SwaggerUI;
 using YouBikeAPI.Data;
-using YouBikeAPI.Extensions;
 using YouBikeAPI.Models;
 using YouBikeAPI.Services;
 
 namespace YouBikeAPI
 {
-    public class Startup
-    {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
+	public class Startup
+	{
+		public IConfiguration configuration { get; }
 
-        public IConfiguration Configuration { get; }
+		public Startup(IConfiguration configuration)
+		{
+			this.configuration = configuration;
+		}
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddControllers()
-                .ConfigureApiBehaviorOptions(setupAction =>
-                {
-                    setupAction.InvalidModelStateResponseFactory = context =>
-                    {
-                        var problemDetail = new ValidationProblemDetails(context.ModelState)
-                        {
-                            Title = "資料驗證失敗",
-                            Status = StatusCodes.Status422UnprocessableEntity,
-                            Detail = "請看下方詳細說明",
-                            Instance = context.HttpContext.Request.Path
-                        };
-                        problemDetail.Extensions.Add("traceId", context.HttpContext.TraceIdentifier);
-                        return new UnprocessableEntityObjectResult(problemDetail)
-                        {
-                            ContentTypes = { "application/problem+json" }
-                        };
-                    };
-                });
-                //.AddFluentValidation();
+		public void ConfigureServices(IServiceCollection services)
+		{
+			services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<AppDbContext>();
+			services.AddAuthentication("Bearer").AddJwtBearer(delegate(JwtBearerOptions options)
+			{
+				byte[] bytes = Encoding.UTF8.GetBytes(configuration["Authentication:SecretKey"]);
+				options.TokenValidationParameters = new TokenValidationParameters
+				{
+					ValidateIssuer = true,
+					ValidIssuer = configuration["Authentication:Issuer"],
+					ValidateAudience = true,
+					ValidAudience = configuration["Authentication:Audience"],
+					ValidateLifetime = true,
+					IssuerSigningKey = new SymmetricSecurityKey(bytes)
+				};
+			});
+			services.AddControllers().ConfigureApiBehaviorOptions(delegate(ApiBehaviorOptions setupAction)
+			{
+				setupAction.InvalidModelStateResponseFactory = delegate(ActionContext context)
+				{
+					ValidationProblemDetails validationProblemDetails = new ValidationProblemDetails(context.ModelState)
+					{
+						Title = "資料驗證失敗",
+						Status = 422,
+						Detail = "請看下方詳細說明",
+						Instance = (string)context.HttpContext.Request.Path
+					};
+					validationProblemDetails.Extensions.Add("traceId", context.HttpContext.TraceIdentifier);
+					return new UnprocessableEntityObjectResult(validationProblemDetails)
+					{
+						ContentTypes = { "application/problem+json" }
+					};
+				};
+			});
+			services.AddHttpClient();
+			services.AddDbContext<AppDbContext>(delegate(DbContextOptionsBuilder options)
+			{
+				options.UseSqlServer(configuration["DbContext:ConnectionString"]);
+			});
+			services.AddTransient<IBikeStationRepository, BikeStationRepository>();
+			services.AddTransient<IBikeRepository, BikeRepository>();
+			services.AddTransient<IPaidmentService, PaidmentService>();
+			services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+			services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+			services.AddSwaggerGen(delegate(SwaggerGenOptions c)
+			{
+				c.SwaggerDoc("v1", new OpenApiInfo
+				{
+					Title = "YouBike API",
+					Version = "v1"
+				});
+				OpenApiSecurityScheme openApiSecurityScheme = new OpenApiSecurityScheme
+				{
+					Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+					Name = "Authorization",
+					In = ParameterLocation.Header,
+					Type = SecuritySchemeType.Http,
+					Scheme = "bearer",
+					Reference = new OpenApiReference
+					{
+						Type = ReferenceType.SecurityScheme,
+						Id = "Bearer"
+					}
+				};
+				c.AddSecurityDefinition("Bearer", openApiSecurityScheme);
+				c.AddSecurityRequirement(new OpenApiSecurityRequirement { 
+				{
+					openApiSecurityScheme,
+					new string[1] { "Bearer" }
+				} });
+			});
+		}
 
-            //services.AddTransient<IValidator<BikeStation>, BikeStationValidator>();
-
-            services.AddDbContext<AppDbContext>(options => {
-                options.UseSqlServer(Configuration["DbContext:ConnectionString"]);
-            });
-            services.AddTransient<IBikeStationRepository, BikeStationRepository>();
-            services.AddTransient<IBikeRepository, BikeRepository>();
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
-        }
-    }
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+		{
+			if (env.IsDevelopment())
+			{
+				app.UseDeveloperExceptionPage();
+			}
+			app.UseSwagger();
+			app.UseSwaggerUI(delegate(SwaggerUIOptions c)
+			{
+				c.SwaggerEndpoint("/swagger/v1/swagger.json", "YouBike API v1");
+			});
+			app.UseHttpsRedirection();
+			app.UseRouting();
+			app.UseAuthentication();
+			app.UseAuthorization();
+			app.UseAuthorization();
+			app.UseEndpoints(delegate(IEndpointRouteBuilder endpoints)
+			{
+				endpoints.MapControllers();
+			});
+		}
+	}
 }

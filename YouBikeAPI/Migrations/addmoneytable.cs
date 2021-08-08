@@ -3,14 +3,46 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations.Builders;
 using YouBikeAPI.Data;
 
 namespace YouBikeAPI.Migrations
 {
 	[DbContext(typeof(AppDbContext))]
-	internal class AppDbContextModelSnapshot : ModelSnapshot
+	[Migration("20210802064556_add money table")]
+	public class addmoneytable : Migration
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		protected override void Up(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.AddColumn<decimal>("Cost", "HistoryRoutes", "decimal(18,4)", null, null, rowVersion: false, null, nullable: false, 0m);
+			migrationBuilder.AddColumn<Guid>("MoneyId", "AspNetUsers", "uniqueidentifier", null, null, rowVersion: false, null, nullable: true);
+			migrationBuilder.CreateTable("Money", (ColumnsBuilder table) => new
+			{
+				Id = table.Column<Guid>("uniqueidentifier"),
+				Value = table.Column<decimal>("decimal(18,4)")
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_Money", x => x.Id);
+			});
+			migrationBuilder.UpdateData("AspNetRoles", "Id", "308660dc-ae51-480f-824d-7dca6714c3e2", "ConcurrencyStamp", "f73f43a7-8a7e-4aad-8744-3258302931b3");
+			migrationBuilder.UpdateData("AspNetUsers", "Id", "90184155-dee0-40c9-bb1e-b5ed07afc04e", new string[3] { "ConcurrencyStamp", "PasswordHash", "SecurityStamp" }, new object[3] { "61d1907d-4176-45f8-854f-791b8c02e8e7", "AQAAAAEAACcQAAAAEEj6SCMnp3KIsd5cjwZ3B15XJKAfCDIuj3+jCHihdn7xIsIBUXsTbCsvQb2EQEwsXg==", "25525449-b590-4cef-b9a9-5ed274d5cc6c" });
+			migrationBuilder.CreateIndex("IX_AspNetUsers_MoneyId", "AspNetUsers", "MoneyId");
+			migrationBuilder.AddForeignKey("FK_AspNetUsers_Money_MoneyId", "AspNetUsers", "MoneyId", "Money", null, null, "Id", ReferentialAction.NoAction, ReferentialAction.Restrict);
+		}
+
+		protected override void Down(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.DropForeignKey("FK_AspNetUsers_Money_MoneyId", "AspNetUsers");
+			migrationBuilder.DropTable("Money");
+			migrationBuilder.DropIndex("IX_AspNetUsers_MoneyId", "AspNetUsers");
+			migrationBuilder.DropColumn("Cost", "HistoryRoutes");
+			migrationBuilder.DropColumn("MoneyId", "AspNetUsers");
+			migrationBuilder.UpdateData("AspNetRoles", "Id", "308660dc-ae51-480f-824d-7dca6714c3e2", "ConcurrencyStamp", "33133bce-8e20-4cb7-aad6-4eeba4c5b3b1");
+			migrationBuilder.UpdateData("AspNetUsers", "Id", "90184155-dee0-40c9-bb1e-b5ed07afc04e", new string[3] { "ConcurrencyStamp", "PasswordHash", "SecurityStamp" }, new object[3] { "b52a0cbf-b328-45c2-b019-11ad2e8dddaa", "AQAAAAEAACcQAAAAENLNfVQQakDo3WKE0tp/hUDYNgcOziVe9q7h8WEXBkXWA5gPVRjUfzmNIEpxCIfMhA==", "5e95556f-b253-416b-8c44-b89acc7cdfe1" });
+		}
+
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 			modelBuilder.HasAnnotation("Relational:MaxIdentifierLength", 128).HasAnnotation("ProductVersion", "5.0.6").HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 			modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", delegate(EntityTypeBuilder b)

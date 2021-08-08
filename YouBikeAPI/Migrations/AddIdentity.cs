@@ -3,14 +3,158 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations.Builders;
 using YouBikeAPI.Data;
 
 namespace YouBikeAPI.Migrations
 {
 	[DbContext(typeof(AppDbContext))]
-	internal class AppDbContextModelSnapshot : ModelSnapshot
+	[Migration("20210727081446_Add Identity")]
+	public class AddIdentity : Migration
 	{
-		protected override void BuildModel(ModelBuilder modelBuilder)
+		protected override void Up(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.CreateTable("AspNetRoles", delegate(ColumnsBuilder table)
+			{
+				OperationBuilder<AddColumnOperation> id2 = table.Column<string>("nvarchar(450)");
+				int? maxLength2 = 256;
+				OperationBuilder<AddColumnOperation> name = table.Column<string>("nvarchar(256)", null, maxLength2, rowVersion: false, null, nullable: true);
+				maxLength2 = 256;
+				return new
+				{
+					Id = id2,
+					Name = name,
+					NormalizedName = table.Column<string>("nvarchar(256)", null, maxLength2, rowVersion: false, null, nullable: true),
+					ConcurrencyStamp = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true)
+				};
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_AspNetRoles", x => x.Id);
+			});
+			migrationBuilder.CreateTable("AspNetUsers", delegate(ColumnsBuilder table)
+			{
+				OperationBuilder<AddColumnOperation> id = table.Column<string>("nvarchar(450)");
+				OperationBuilder<AddColumnOperation> bikeId = table.Column<int>("int", null, null, rowVersion: false, null, nullable: true);
+				int? maxLength = 256;
+				OperationBuilder<AddColumnOperation> userName = table.Column<string>("nvarchar(256)", null, maxLength, rowVersion: false, null, nullable: true);
+				maxLength = 256;
+				OperationBuilder<AddColumnOperation> normalizedUserName = table.Column<string>("nvarchar(256)", null, maxLength, rowVersion: false, null, nullable: true);
+				maxLength = 256;
+				OperationBuilder<AddColumnOperation> email = table.Column<string>("nvarchar(256)", null, maxLength, rowVersion: false, null, nullable: true);
+				maxLength = 256;
+				return new
+				{
+					Id = id,
+					bikeId = bikeId,
+					UserName = userName,
+					NormalizedUserName = normalizedUserName,
+					Email = email,
+					NormalizedEmail = table.Column<string>("nvarchar(256)", null, maxLength, rowVersion: false, null, nullable: true),
+					EmailConfirmed = table.Column<bool>("bit"),
+					PasswordHash = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true),
+					SecurityStamp = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true),
+					ConcurrencyStamp = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true),
+					PhoneNumber = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true),
+					PhoneNumberConfirmed = table.Column<bool>("bit"),
+					TwoFactorEnabled = table.Column<bool>("bit"),
+					LockoutEnd = table.Column<DateTimeOffset>("datetimeoffset", null, null, rowVersion: false, null, nullable: true),
+					LockoutEnabled = table.Column<bool>("bit"),
+					AccessFailedCount = table.Column<int>("int")
+				};
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+				table.ForeignKey("FK_AspNetUsers_Bikes_bikeId", x => x.bikeId, "Bikes", "Id", null, ReferentialAction.NoAction, ReferentialAction.Restrict);
+			});
+			migrationBuilder.CreateTable("AspNetRoleClaims", (ColumnsBuilder table) => new
+			{
+				Id = table.Column<int>("int").Annotation("SqlServer:Identity", "1, 1"),
+				RoleId = table.Column<string>("nvarchar(450)"),
+				ClaimType = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true),
+				ClaimValue = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true)
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_AspNetRoleClaims", x => x.Id);
+				table.ForeignKey("FK_AspNetRoleClaims_AspNetRoles_RoleId", x => x.RoleId, "AspNetRoles", "Id", null, ReferentialAction.NoAction, ReferentialAction.Cascade);
+			});
+			migrationBuilder.CreateTable("AspNetUserClaims", (ColumnsBuilder table) => new
+			{
+				Id = table.Column<int>("int").Annotation("SqlServer:Identity", "1, 1"),
+				UserId = table.Column<string>("nvarchar(450)"),
+				ClaimType = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true),
+				ClaimValue = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true)
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
+				table.ForeignKey("FK_AspNetUserClaims_AspNetUsers_UserId", x => x.UserId, "AspNetUsers", "Id", null, ReferentialAction.NoAction, ReferentialAction.Cascade);
+			});
+			migrationBuilder.CreateTable("AspNetUserLogins", (ColumnsBuilder table) => new
+			{
+				LoginProvider = table.Column<string>("nvarchar(450)"),
+				ProviderKey = table.Column<string>("nvarchar(450)"),
+				ProviderDisplayName = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true),
+				UserId = table.Column<string>("nvarchar(450)")
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_AspNetUserLogins", x => new { x.LoginProvider, x.ProviderKey });
+				table.ForeignKey("FK_AspNetUserLogins_AspNetUsers_UserId", x => x.UserId, "AspNetUsers", "Id", null, ReferentialAction.NoAction, ReferentialAction.Cascade);
+			});
+			migrationBuilder.CreateTable("AspNetUserRoles", (ColumnsBuilder table) => new
+			{
+				UserId = table.Column<string>("nvarchar(450)"),
+				RoleId = table.Column<string>("nvarchar(450)")
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
+				table.ForeignKey("FK_AspNetUserRoles_AspNetRoles_RoleId", x => x.RoleId, "AspNetRoles", "Id", null, ReferentialAction.NoAction, ReferentialAction.Cascade);
+				table.ForeignKey("FK_AspNetUserRoles_AspNetUsers_UserId", x => x.UserId, "AspNetUsers", "Id", null, ReferentialAction.NoAction, ReferentialAction.Cascade);
+			});
+			migrationBuilder.CreateTable("AspNetUserTokens", (ColumnsBuilder table) => new
+			{
+				UserId = table.Column<string>("nvarchar(450)"),
+				LoginProvider = table.Column<string>("nvarchar(450)"),
+				Name = table.Column<string>("nvarchar(450)"),
+				Value = table.Column<string>("nvarchar(max)", null, null, rowVersion: false, null, nullable: true)
+			}, null, table =>
+			{
+				table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
+				table.ForeignKey("FK_AspNetUserTokens_AspNetUsers_UserId", x => x.UserId, "AspNetUsers", "Id", null, ReferentialAction.NoAction, ReferentialAction.Cascade);
+			});
+			migrationBuilder.InsertData("AspNetRoles", new string[4] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" }, new object[4] { "308660dc-ae51-480f-824d-7dca6714c3e2", "c60988ac-3442-4dc2-80e1-0f84df297df1", "Admin", "ADMIN" });
+			migrationBuilder.InsertData("AspNetUsers", new string[16]
+			{
+				"Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash",
+				"PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName", "bikeId"
+			}, new object[16]
+			{
+				"90184155-dee0-40c9-bb1e-b5ed07afc04e", 0, "fd6e4ca8-12ca-4adc-b4f0-eb7f55b073ec", "admin@xx.com", true, false, null, "ADMIN@XX.COM", "ADMIN@XX.COM", "AQAAAAEAACcQAAAAEESMR8hNMCAdgtwO+HHGIUE8H1Ew4LL6b4xA6tRyoyvVitChJzWh4VINLMXcahltPA==",
+				"123456789", false, "f1259101-9f1f-4481-a362-6a36e3b3d8b3", false, "admin@xx.com", null
+			});
+			migrationBuilder.InsertData("AspNetUserRoles", new string[2] { "RoleId", "UserId" }, new object[2] { "308660dc-ae51-480f-824d-7dca6714c3e2", "90184155-dee0-40c9-bb1e-b5ed07afc04e" });
+			migrationBuilder.CreateIndex("IX_AspNetRoleClaims_RoleId", "AspNetRoleClaims", "RoleId");
+			migrationBuilder.CreateIndex("RoleNameIndex", "AspNetRoles", "NormalizedName", null, unique: true, "[NormalizedName] IS NOT NULL");
+			migrationBuilder.CreateIndex("IX_AspNetUserClaims_UserId", "AspNetUserClaims", "UserId");
+			migrationBuilder.CreateIndex("IX_AspNetUserLogins_UserId", "AspNetUserLogins", "UserId");
+			migrationBuilder.CreateIndex("IX_AspNetUserRoles_RoleId", "AspNetUserRoles", "RoleId");
+			migrationBuilder.CreateIndex("EmailIndex", "AspNetUsers", "NormalizedEmail");
+			migrationBuilder.CreateIndex("IX_AspNetUsers_bikeId", "AspNetUsers", "bikeId");
+			migrationBuilder.CreateIndex("UserNameIndex", "AspNetUsers", "NormalizedUserName", null, unique: true, "[NormalizedUserName] IS NOT NULL");
+		}
+
+		protected override void Down(MigrationBuilder migrationBuilder)
+		{
+			migrationBuilder.DropTable("AspNetRoleClaims");
+			migrationBuilder.DropTable("AspNetUserClaims");
+			migrationBuilder.DropTable("AspNetUserLogins");
+			migrationBuilder.DropTable("AspNetUserRoles");
+			migrationBuilder.DropTable("AspNetUserTokens");
+			migrationBuilder.DropTable("AspNetRoles");
+			migrationBuilder.DropTable("AspNetUsers");
+		}
+
+		protected override void BuildTargetModel(ModelBuilder modelBuilder)
 		{
 			modelBuilder.HasAnnotation("Relational:MaxIdentifierLength", 128).HasAnnotation("ProductVersion", "5.0.6").HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 			modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", delegate(EntityTypeBuilder b)
@@ -26,7 +170,7 @@ namespace YouBikeAPI.Migrations
 				b.HasData(new
 				{
 					Id = "308660dc-ae51-480f-824d-7dca6714c3e2",
-					ConcurrencyStamp = "f73f43a7-8a7e-4aad-8744-3258302931b3",
+					ConcurrencyStamp = "c60988ac-3442-4dc2-80e1-0f84df297df1",
 					Name = "Admin",
 					NormalizedName = "ADMIN"
 				});
@@ -94,7 +238,6 @@ namespace YouBikeAPI.Migrations
 				b.Property<bool>("EmailConfirmed").HasColumnType("bit");
 				b.Property<bool>("LockoutEnabled").HasColumnType("bit");
 				b.Property<DateTimeOffset?>("LockoutEnd").HasColumnType("datetimeoffset");
-				b.Property<Guid?>("MoneyId").HasColumnType("uniqueidentifier");
 				b.Property<string>("NormalizedEmail").HasMaxLength(256).HasColumnType("nvarchar(256)");
 				b.Property<string>("NormalizedUserName").HasMaxLength(256).HasColumnType("nvarchar(256)");
 				b.Property<string>("PasswordHash").HasColumnType("nvarchar(max)");
@@ -103,26 +246,27 @@ namespace YouBikeAPI.Migrations
 				b.Property<string>("SecurityStamp").HasColumnType("nvarchar(max)");
 				b.Property<bool>("TwoFactorEnabled").HasColumnType("bit");
 				b.Property<string>("UserName").HasMaxLength(256).HasColumnType("nvarchar(256)");
+				b.Property<int?>("bikeId").HasColumnType("int");
 				b.HasKey("Id");
-				b.HasIndex("MoneyId");
 				b.HasIndex("NormalizedEmail").HasDatabaseName("EmailIndex");
 				b.HasIndex("NormalizedUserName").IsUnique().HasDatabaseName("UserNameIndex")
 					.HasFilter("[NormalizedUserName] IS NOT NULL");
+				b.HasIndex("bikeId");
 				b.ToTable("AspNetUsers");
 				b.HasData(new
 				{
 					Id = "90184155-dee0-40c9-bb1e-b5ed07afc04e",
 					AccessFailedCount = 0,
-					ConcurrencyStamp = "61d1907d-4176-45f8-854f-791b8c02e8e7",
+					ConcurrencyStamp = "fd6e4ca8-12ca-4adc-b4f0-eb7f55b073ec",
 					Email = "admin@xx.com",
 					EmailConfirmed = true,
 					LockoutEnabled = false,
 					NormalizedEmail = "ADMIN@XX.COM",
 					NormalizedUserName = "ADMIN@XX.COM",
-					PasswordHash = "AQAAAAEAACcQAAAAEEj6SCMnp3KIsd5cjwZ3B15XJKAfCDIuj3+jCHihdn7xIsIBUXsTbCsvQb2EQEwsXg==",
+					PasswordHash = "AQAAAAEAACcQAAAAEESMR8hNMCAdgtwO+HHGIUE8H1Ew4LL6b4xA6tRyoyvVitChJzWh4VINLMXcahltPA==",
 					PhoneNumber = "123456789",
 					PhoneNumberConfirmed = false,
-					SecurityStamp = "25525449-b590-4cef-b9a9-5ed274d5cc6c",
+					SecurityStamp = "f1259101-9f1f-4481-a362-6a36e3b3d8b3",
 					TwoFactorEnabled = false,
 					UserName = "admin@xx.com"
 				});
@@ -136,11 +280,9 @@ namespace YouBikeAPI.Migrations
 				b.Property<int>("Mileage").HasColumnType("int");
 				b.Property<bool>("Rented").HasColumnType("bit");
 				b.Property<decimal>("Revenue").HasPrecision(18, 2).HasColumnType("decimal(18,2)");
-				b.Property<string>("UserId").HasColumnType("nvarchar(450)");
 				b.HasKey("Id");
 				b.HasIndex("BikeStationId");
 				b.HasIndex("BikeType");
-				b.HasIndex("UserId").IsUnique().HasFilter("[UserId] IS NOT NULL");
 				b.ToTable("Bikes");
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.BikeStation", delegate(EntityTypeBuilder b)
@@ -155,30 +297,6 @@ namespace YouBikeAPI.Migrations
 				b.Property<DateTime>("UpdateTime").HasColumnType("datetime2");
 				b.HasKey("Id");
 				b.ToTable("BikeStations");
-			});
-			modelBuilder.Entity("YouBikeAPI.Models.HistoryRoute", delegate(EntityTypeBuilder b)
-			{
-				b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int")
-					.HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-				b.Property<string>("ApplicationUserId").HasColumnType("nvarchar(450)");
-				b.Property<int>("BikeId").HasColumnType("int");
-				b.Property<DateTime>("BorrowTime").HasColumnType("datetime2");
-				b.Property<decimal>("Cost").HasColumnType("decimal(18,4)");
-				b.Property<bool>("CurrentRoute").HasColumnType("bit");
-				b.Property<Guid>("Destination").HasColumnType("uniqueidentifier");
-				b.Property<DateTime>("ReturnTime").HasColumnType("datetime2");
-				b.Property<Guid>("Source").HasColumnType("uniqueidentifier");
-				b.HasKey("Id");
-				b.HasIndex("ApplicationUserId");
-				b.HasIndex("BikeId");
-				b.ToTable("HistoryRoutes");
-			});
-			modelBuilder.Entity("YouBikeAPI.Models.Money", delegate(EntityTypeBuilder b)
-			{
-				b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
-				b.Property<decimal>("Value").HasColumnType("decimal(18,4)");
-				b.HasKey("Id");
-				b.ToTable("Money");
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.Price", delegate(EntityTypeBuilder b)
 			{
@@ -223,8 +341,8 @@ namespace YouBikeAPI.Migrations
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.ApplicationUser", delegate(EntityTypeBuilder b)
 			{
-				b.HasOne("YouBikeAPI.Models.Money", "Money").WithMany().HasForeignKey("MoneyId");
-				b.Navigation("Money");
+				b.HasOne("YouBikeAPI.Models.Bike", "bike").WithMany().HasForeignKey("bikeId");
+				b.Navigation("bike");
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.Bike", delegate(EntityTypeBuilder b)
 			{
@@ -232,23 +350,10 @@ namespace YouBikeAPI.Migrations
 				b.HasOne("YouBikeAPI.Models.Price", "Price").WithMany().HasForeignKey("BikeType")
 					.OnDelete(DeleteBehavior.Cascade)
 					.IsRequired();
-				b.HasOne("YouBikeAPI.Models.ApplicationUser", "User").WithOne("Bike").HasForeignKey("YouBikeAPI.Models.Bike", "UserId");
 				b.Navigation("Price");
-				b.Navigation("User");
-			});
-			modelBuilder.Entity("YouBikeAPI.Models.HistoryRoute", delegate(EntityTypeBuilder b)
-			{
-				b.HasOne("YouBikeAPI.Models.ApplicationUser", "User").WithMany("HistroyRoutes").HasForeignKey("ApplicationUserId");
-				b.HasOne("YouBikeAPI.Models.Bike", "Bike").WithMany().HasForeignKey("BikeId")
-					.OnDelete(DeleteBehavior.Cascade)
-					.IsRequired();
-				b.Navigation("Bike");
-				b.Navigation("User");
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.ApplicationUser", delegate(EntityTypeBuilder b)
 			{
-				b.Navigation("Bike");
-				b.Navigation("HistroyRoutes");
 				b.Navigation("UserRoles");
 			});
 			modelBuilder.Entity("YouBikeAPI.Models.BikeStation", delegate(EntityTypeBuilder b)

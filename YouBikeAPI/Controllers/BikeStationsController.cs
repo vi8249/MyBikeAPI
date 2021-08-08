@@ -1,119 +1,159 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Newtonsoft.Json;
 using YouBikeAPI.Data;
 using YouBikeAPI.Dtos;
+using YouBikeAPI.Helper;
 using YouBikeAPI.Models;
+using YouBikeAPI.Parameters;
 using YouBikeAPI.Services;
 
 namespace YouBikeAPI.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class BikeStationsController : ControllerBase
-    {
-        private readonly AppDbContext _context;
-        private readonly IBikeStationRepository _bikeStationRepository;
-        private readonly IMapper _mapper;
+	[Route("api/[controller]")]
+	[ApiController]
+	public class BikeStationsController : ControllerBase
+	{
+		private readonly AppDbContext _context;
 
-        public BikeStationsController(
-            AppDbContext context,
-            IBikeStationRepository bikeStationRepository,
-            IMapper mapper)
-        {
-            _context = context;
-            _bikeStationRepository = bikeStationRepository;
-            _mapper = mapper;
-        }
+		private readonly IBikeStationRepository _bikeStationRepository;
 
-        // GET: api/BikeStations
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<BikeStation>>> GetBikeStations()
-        {
-            var bikeStations = await _bikeStationRepository.GetBikeStations();
+		private readonly IHttpContextAccessor _httpContextAccessor;
 
-            if (bikeStations == null)
-            {
-                return NotFound();
-            }
+		private readonly IUrlHelper _urlHelper;
 
-            return Ok(bikeStations);
-        }
+		private readonly IMapper _mapper;
 
-        // GET: api/BikeStations/5
-        [HttpGet("{id:Guid}", Name = "GetBikeStation")]
-        public async Task<ActionResult<BikeStation>> GetBikeStation(Guid id)
-        {
-            var bikeStation = await _bikeStationRepository.GetBikeStationById(id);
+		public BikeStationsController(AppDbContext context, IBikeStationRepository bikeStationRepository, IHttpContextAccessor httpContextAccessor, IUrlHelperFactory urlHelperFactory, IActionContextAccessor actionContextAccessor, IMapper mapper)
+		{
+			_context = context;
+			_bikeStationRepository = bikeStationRepository;
+			_httpContextAccessor = httpContextAccessor;
+			_urlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
+			_mapper = mapper;
+		}
 
-            if (bikeStation == null)
-            {
-                return NotFound();
-            }
+		private string GenerateGetBikeStationsURL(PageParameters pageParameters, ResourceUrlType resourceUrlType)
+		{
+			if (1 == 0)
+			{
+			}
+			string result = resourceUrlType switch
+			{
+				ResourceUrlType.PreviousPage => _urlHelper.Link("GetBikeStations", new
+				{
+					pageNumber = pageParameters.PageNum - 1,
+					pageSize = pageParameters.PageSize
+				}), 
+				ResourceUrlType.NextPage => _urlHelper.Link("GetBikeStations", new
+				{
+					pageNumber = pageParameters.PageNum + 1,
+					pageSize = pageParameters.PageSize
+				}), 
+				_ => _urlHelper.Link("GetBikeStations", new
+				{
+					pageNumber = pageParameters.PageNum,
+					pageSize = pageParameters.PageSize
+				}), 
+			};
+			if (1 == 0)
+			{
+			}
+			return result;
+		}
 
-            return Ok(bikeStation);
-        }
+		[HttpGet(Name = "GetBikeStations")]
+		public async Task<IActionResult> GetBikeStations([FromQuery] PageParameters pageParameters)
+		{
+			PaginationList<BikeStation, BikeStationDto> bikeStations = await _bikeStationRepository.GetBikeStations(pageParameters.PageNum, pageParameters.PageSize);
+			if (bikeStations == null)
+			{
+				return NotFound();
+			}
+			string previousPageLink = (bikeStations.HasPrevious ? GenerateGetBikeStationsURL(pageParameters, ResourceUrlType.PreviousPage) : null);
+			string nextPageLink = (bikeStations.HasNext ? GenerateGetBikeStationsURL(pageParameters, ResourceUrlType.NextPage) : null);
+			var paginationMetadata = new
+			{
+				previousPageLink = previousPageLink,
+				nextPageLink = nextPageLink,
+				totalCount = bikeStations.TotalCount,
+				pageSize = bikeStations.PageSize,
+				currentPage = bikeStations.CurrPage,
+				totalPages = bikeStations.TotalPages
+			};
+			base.Response.Headers.Add("x-pagination", JsonConvert.SerializeObject(paginationMetadata));
+			return Ok(bikeStations);
+		}
 
-        // PUT: api/BikeStations/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut]
-        public async Task<IActionResult> PutBikeStation(BikeStationForManipulationDto bikeStation)
-        {
-            if (!await _bikeStationRepository.BikeStationExists(bikeStation.Id))
-            {
-                return NotFound();
-            }
+		[HttpGet("{id:Guid}", Name = "GetBikeStation")]
+		public async Task<IActionResult> GetBikeStation(Guid id)
+		{
+			BikeStation bikeStation = await _bikeStationRepository.GetBikeStationById(id);
+			if (bikeStation == null)
+			{
+				return NotFound();
+			}
+			return Ok(bikeStation);
+		}
 
-            await _bikeStationRepository.UpdateBikeStation(bikeStation);
+		[HttpPut]
+		[Authorize(Roles = "Admin")]
+		[Authorize(AuthenticationSchemes = "Bearer")]
+		public async Task<IActionResult> PutBikeStation(BikeStationForManipulationDto bikeStation)
+		{
+			if (!(await _bikeStationRepository.BikeStationExists(bikeStation.Id)))
+			{
+				return NotFound();
+			}
+			await _bikeStationRepository.UpdateBikeStation(bikeStation);
+			if (await _bikeStationRepository.SaveAllAsync())
+			{
+				return NoContent();
+			}
+			return BadRequest("修改失敗");
+		}
 
-            if (await _bikeStationRepository.SaveAllAsync())
-            {
-                return NoContent();
-            }
+		[HttpPost]
+		[Authorize(Roles = "Admin")]
+		[Authorize(AuthenticationSchemes = "Bearer")]
+		public async Task<ActionResult<BikeStation>> PostBikeStation(BikeStationForCreationDto station)
+		{
+			if (station == null)
+			{
+				return NotFound();
+			}
+			BikeStation newStation = _bikeStationRepository.CreateBikeStation(station);
+			if (await _bikeStationRepository.SaveAllAsync())
+			{
+				BikeStation result = _mapper.Map<BikeStation>(newStation);
+				return CreatedAtAction("GetBikeStation", new
+				{
+					id = result.Id
+				}, result);
+			}
+			return BadRequest("新增失敗");
+		}
 
-            return BadRequest("修改失敗");
-        }
-
-        // POST: api/BikeStations
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<BikeStation>> PostBikeStation(BikeStationForCreationDto station)
-        {
-            if (station == null) return NotFound();
-
-            var newStation = _bikeStationRepository.CreateBikeStation(station);
-
-            if (await _bikeStationRepository.SaveAllAsync())
-            {
-                var result = _mapper.Map<BikeStation>(newStation);
-                return CreatedAtAction("GetBikeStation", new { id = result.Id }, result);
-            }
-
-            return BadRequest("新增失敗");
-        }
-
-        // DELETE: api/BikeStations/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBikeStation(Guid id)
-        {
-            if (!await _bikeStationRepository.BikeStationExists(id))
-            {
-                return NotFound();
-            }
-
-            await _bikeStationRepository.DeleteBikeStation(id);
-
-            if (await _bikeStationRepository.SaveAllAsync())
-            { 
-                return NoContent();
-            }
-
-            return BadRequest("新增失敗");
-        }
-    }
+		[HttpDelete("{id}")]
+		[Authorize(Roles = "Admin")]
+		public async Task<IActionResult> DeleteBikeStation(Guid id)
+		{
+			if (!(await _bikeStationRepository.BikeStationExists(id)))
+			{
+				return NotFound();
+			}
+			await _bikeStationRepository.DeleteBikeStation(id);
+			if (await _bikeStationRepository.SaveAllAsync())
+			{
+				return NoContent();
+			}
+			return BadRequest("新增失敗");
+		}
+	}
 }
