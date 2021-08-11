@@ -1,0 +1,1 @@
+web: (bash ./gcp_proxy.sh) & cd $HOME/heroku_output && ./YouBikeAPI
