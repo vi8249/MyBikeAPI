@@ -177,7 +177,7 @@ namespace YouBikeAPI.Services
                 ApplicationUserId = userId,
                 BikeId = bike.Id,
                 CurrentRoute = true,
-                CreationDate = DateTime.UtcNow,
+                CreationDate = DateTime.UtcNow.ToLocalTime(),
                 ReturnTime = null
             };
 
@@ -207,7 +207,7 @@ namespace YouBikeAPI.Services
             }
             HistoryRoute historyRoute = await _context.HistoryRoutes.SingleOrDefaultAsync((HistoryRoute h) => h.ApplicationUserId == userId && h.CurrentRoute);
             historyRoute.Destination = destinationId;
-            historyRoute.ReturnTime = DateTime.UtcNow;
+            historyRoute.ReturnTime = DateTime.UtcNow.ToLocalTime();
             BikeStation stationFrom = await _bikeStationRepository.GetBikeStationById(historyRoute.Source);
             BikeStation stationTo = await _bikeStationRepository.GetBikeStationById(destinationId);
             if (stationFrom == null || stationTo == null)

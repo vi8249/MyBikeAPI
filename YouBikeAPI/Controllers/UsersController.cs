@@ -80,7 +80,7 @@ namespace YouBikeAPI.Controllers
             }
             byte[] secretByte = Encoding.UTF8.GetBytes(_configuration["Authentication:SecretKey"]);
             SymmetricSecurityKey secretKey = new SymmetricSecurityKey(secretByte);
-            JwtSecurityToken token = new JwtSecurityToken(signingCredentials: new SigningCredentials(secretKey, sigingAlgorithm), issuer: _configuration["Authentication:Issuer"], audience: _configuration["Authentication:Audience"], claims: claims, notBefore: DateTime.UtcNow, expires: DateTime.UtcNow.AddDays(1.0));
+            JwtSecurityToken token = new JwtSecurityToken(signingCredentials: new SigningCredentials(secretKey, sigingAlgorithm), issuer: _configuration["Authentication:Issuer"], audience: _configuration["Authentication:Audience"], claims: claims, notBefore: DateTime.UtcNow.ToLocalTime(), expires: DateTime.UtcNow.ToLocalTime().AddDays(1.0));
             string tokenStr = new JwtSecurityTokenHandler().WriteToken(token);
             return Ok(new { email = user.Email, token = tokenStr, admin = admins?.Any(u => u.Id == user.Id) });
         }
