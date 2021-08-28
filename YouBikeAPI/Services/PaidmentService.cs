@@ -50,8 +50,10 @@ namespace YouBikeAPI.Services
             {
                 return (false, "使用者不存在");
             }
+
             HistoryRoute currHistoryRoute = await _context.HistoryRoutes.SingleOrDefaultAsync((HistoryRoute h) => h.ApplicationUserId == userId && h.CurrentRoute == true);
-            TimeSpan userTimeSpan = currHistoryRoute.ReturnTime.Subtract(currHistoryRoute.BorrowTime);
+            TimeSpan userTimeSpan = -currHistoryRoute.CreationDate.Subtract(currHistoryRoute.ReturnTime ?? DateTime.UtcNow);
+
             (double, TimeSpan) apiResult = await DistanceMatrixAPI(lan, lon);
             _ = user.Money.Value;
             if (userTimeSpan.TotalMinutes >= apiResult.Item2.TotalMinutes)
@@ -60,9 +62,10 @@ namespace YouBikeAPI.Services
                 {
                     return (false, "餘額不足");
                 }
-                user.Money.Value -= (decimal)user.Bike.Price.Cost;
-                user.Bike.Revenue += (decimal)user.Bike.Price.Cost;
-                currHistoryRoute.Cost = user.Bike.Price.Cost;
+                var value = (decimal)(user.Bike.Price.Cost * (Math.Ceiling(userTimeSpan.TotalMinutes / 30)));
+                user.Money.Value -= value;
+                user.Bike.Revenue += value;
+                currHistoryRoute.Cost = value;
             }
             else
             {
@@ -76,6 +79,11 @@ namespace YouBikeAPI.Services
             }
             user.Bike.Mileage += (int)apiResult.Item1;
             return (true, "付款成功");
+        }
+
+        public async Task CreateHistoryRoute(HistoryRoute historyRoute)
+        {
+            await _context.HistoryRoutes.AddAsync(historyRoute);
         }
     }
 }

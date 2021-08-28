@@ -9,13 +9,19 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using YouBikeAPI.Data;
 using YouBikeAPI.Dtos;
+using YouBikeAPI.Helper;
 using YouBikeAPI.Models;
+using YouBikeAPI.Parameters;
 
 namespace YouBikeAPI.Controllers
 {
@@ -28,19 +34,26 @@ namespace YouBikeAPI.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
 
         private readonly SignInManager<ApplicationUser> _signInManager;
-
         private readonly IHttpContextAccessor _httpContextAccessor;
-
+        private readonly IUrlHelper _urlHelper;
         private readonly AppDbContext _context;
-
         private readonly IMapper _mapper;
 
-        public UsersController(IConfiguration configuration, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IHttpContextAccessor httpContextAccessor, AppDbContext context, IMapper mapper)
+        public UsersController(
+            IConfiguration configuration,
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
+            IHttpContextAccessor httpContextAccessor,
+            IUrlHelperFactory urlHelperFactory,
+            IActionContextAccessor actionContextAccessor,
+            AppDbContext context,
+            IMapper mapper)
         {
             _configuration = configuration;
             _userManager = userManager;
             _signInManager = signInManager;
             _httpContextAccessor = httpContextAccessor;
+            _urlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
             _context = context;
             _mapper = mapper;
         }
@@ -54,6 +67,7 @@ namespace YouBikeAPI.Controllers
                 return BadRequest("login Failed!");
             }
             ApplicationUser user = await _userManager.FindByNameAsync(loginDto.Email);
+            var admins = await _userManager.GetUsersInRoleAsync("Admin");
             string sigingAlgorithm = "HS256";
             List<Claim> claims = new List<Claim>
             {
@@ -68,7 +82,7 @@ namespace YouBikeAPI.Controllers
             SymmetricSecurityKey secretKey = new SymmetricSecurityKey(secretByte);
             JwtSecurityToken token = new JwtSecurityToken(signingCredentials: new SigningCredentials(secretKey, sigingAlgorithm), issuer: _configuration["Authentication:Issuer"], audience: _configuration["Authentication:Audience"], claims: claims, notBefore: DateTime.UtcNow, expires: DateTime.UtcNow.AddDays(1.0));
             string tokenStr = new JwtSecurityTokenHandler().WriteToken(token);
-            return Ok(tokenStr);
+            return Ok(new { email = user.Email, token = tokenStr, admin = admins?.Any(u => u.Id == user.Id) });
         }
 
         [AllowAnonymous]
@@ -94,7 +108,19 @@ namespace YouBikeAPI.Controllers
             {
                 return BadRequest("用戶創建失敗!");
             }
-            return Ok();
+
+            //for login jwt
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim("sub", user.Id)
+            };
+            string sigingAlgorithm = "HS256";
+            byte[] secretByte = Encoding.UTF8.GetBytes(_configuration["Authentication:SecretKey"]);
+            SymmetricSecurityKey secretKey = new SymmetricSecurityKey(secretByte);
+            JwtSecurityToken token = new JwtSecurityToken(signingCredentials: new SigningCredentials(secretKey, sigingAlgorithm), issuer: _configuration["Authentication:Issuer"], audience: _configuration["Authentication:Audience"], claims: claims, notBefore: DateTime.UtcNow, expires: DateTime.UtcNow.AddDays(1.0));
+            string tokenStr = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return Ok(new { email = user.Email, token = tokenStr });
         }
 
         [HttpPost("storage/{amount}")]
@@ -106,7 +132,9 @@ namespace YouBikeAPI.Controllers
             {
                 return BadRequest("error!");
             }
-            ApplicationUser user = await _userManager.FindByIdAsync(userId);
+            ApplicationUser user = await _userManager.Users
+                .Include(u => u.Money)
+                .SingleOrDefaultAsync(u => u.Id == userId);
             if (user == null)
             {
                 return BadRequest("error!");
@@ -129,9 +157,32 @@ namespace YouBikeAPI.Controllers
             return BadRequest("儲值失敗");
         }
 
+        private string GenerateGetBikesURL(PageParameters pageParameters, ResourceUrlType resourceUrlType)
+        {
+            string result = resourceUrlType switch
+            {
+                ResourceUrlType.PreviousPage => _urlHelper.Link("GetBikes", new
+                {
+                    pageNumber = pageParameters.PageNum - 1,
+                    pageSize = pageParameters.PageSize
+                }),
+                ResourceUrlType.NextPage => _urlHelper.Link("GetBikes", new
+                {
+                    pageNumber = pageParameters.PageNum + 1,
+                    pageSize = pageParameters.PageSize
+                }),
+                _ => _urlHelper.Link("GetBikes", new
+                {
+                    pageNumber = pageParameters.PageNum,
+                    pageSize = pageParameters.PageSize
+                }),
+            };
+            return result;
+        }
+
         [HttpGet("info")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> GetUserInfo()
+        public async Task<IActionResult> GetUserInfo([FromQuery] PageParameters pageParameters)
         {
             string userId = _httpContextAccessor.HttpContext!.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")!.Value;
             if (userId == null)
@@ -144,24 +195,39 @@ namespace YouBikeAPI.Controllers
             if (user == null)
                 return BadRequest("使用者不存在!");
 
-            List<HistoryRoute> histories = await _context.HistoryRoutes
+            var bike = await _context.Bikes.SingleOrDefaultAsync(b => b.UserId == user.Id);
+
+            var histories = _context.HistoryRoutes
                 .Where((HistoryRoute h) => h.ApplicationUserId == userId)
-                .Include((HistoryRoute h) => h.Bike)
-                .ToListAsync();
+                .OrderByDescending(h => h.CreationDate);
 
             var admin = await _userManager.GetUsersInRoleAsync("Admin");
 
             var userInfo = new
             {
                 UserId = user.Id,
+                Email = user.Email,
                 Money = user?.Money.Value,
-                HistoryRoute = _mapper.Map<List<HistoryRouteDto>>(histories),
+                Bike = bike?.Id,
+                Usage = await _context.HistoryRoutes.Where(h => h.ApplicationUserId == userId).CountAsync(),
+                HistoryRoute = await PaginationList<HistoryRoute, HistoryRouteDto>.CreateAsync(pageParameters.PageNum, pageParameters.PageSize, histories, _mapper),
                 Admin = admin?.Any(u => u.Id == user.Id)
             };
 
+            string previousPageLink = (userInfo.HistoryRoute.HasPrevious ? GenerateGetBikesURL(pageParameters, ResourceUrlType.PreviousPage) : null);
+            string nextPageLink = (userInfo.HistoryRoute.HasNext ? GenerateGetBikesURL(pageParameters, ResourceUrlType.NextPage) : null);
+            var paginationMetadata = new
+            {
+                previousPageLink = previousPageLink,
+                nextPageLink = nextPageLink,
+                totalCount = userInfo.HistoryRoute.TotalCount,
+                pageSize = userInfo.HistoryRoute.PageSize,
+                currentPage = userInfo.HistoryRoute.CurrPage,
+                totalPages = userInfo.HistoryRoute.TotalPages
+            };
+            base.Response.Headers.Add("x-pagination", JsonConvert.SerializeObject(paginationMetadata));
+
             return Ok(userInfo);
         }
-
-
     }
 }

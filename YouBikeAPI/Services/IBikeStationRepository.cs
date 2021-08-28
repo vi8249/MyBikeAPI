@@ -7,26 +7,30 @@ using YouBikeAPI.Models;
 
 namespace YouBikeAPI.Services
 {
-	public interface IBikeStationRepository
-	{
-		Task<PaginationList<BikeStation, BikeStationDto>> GetBikeStations(int pageNum, int pageSize);
+    public interface IBikeStationRepository
+    {
+        Task<PaginationList<BikeStation, BikeStationDto>> GetBikeStations(int pageNum, int pageSize, string query);
 
-		Task<BikeStation> GetBikeStationById(Guid? id);
+        Task<BikeStation> GetBikeStationById(Guid? id);
 
-		Task<BikeStationDto> GetBikeStationByIdDto(Guid? id);
+        Task<BikeStationDto> GetBikeStationByIdDto(Guid? id);
 
-		Task<BikeStation> GetBikeStationByName(string stationName);
+        Task<BikeStation> GetBikeStationByName(string stationName);
 
-		BikeStation CreateBikeStation(BikeStationForCreationDto station);
+        BikeStation CreateBikeStation(BikeStationForCreationDto station);
 
-		Task UpdateBikeStation(BikeStationForManipulationDto station);
+        Task UpdateBikeStation(BikeStationForManipulationDto station);
 
-		Task DeleteBikeStation(Guid id);
+        Task DeleteBikeStation(Guid id);
 
-		Task<bool> BikeStationExists(Guid id);
+        Task<int> GetBikeStationsCount();
 
-		Task<bool> SaveAllAsync();
+        Task<int> BikeStationIncreasedInLastMonth();
 
-		Task<bool> ValidateModel(ControllerBase controllerBase, Guid? id);
-	}
+        Task<bool> BikeStationExists(Guid id);
+
+        Task<bool> SaveAllAsync();
+
+        Task<bool> ValidateModel(ControllerBase controllerBase, Guid? id);
+    }
 }

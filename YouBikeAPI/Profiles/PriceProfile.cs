@@ -4,11 +4,12 @@ using YouBikeAPI.Models;
 
 namespace YouBikeAPI.Profiles
 {
-	public class PriceProfile : Profile
-	{
-		public PriceProfile()
-		{
-			CreateMap<Price, PriceDto>();
-		}
-	}
+    public class PriceProfile : Profile
+    {
+        public PriceProfile()
+        {
+            CreateMap<Price, PriceDto>();
+            CreateMap<PriceDto, Price>();
+        }
+    }
 }

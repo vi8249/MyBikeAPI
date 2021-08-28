@@ -16,7 +16,6 @@ namespace YouBikeAPI.Dtos
 
 		public DateTime UpdateTime { get; set; } = DateTime.UtcNow;
 
-
 		public double Latitude { get; set; }
 
 		public double Longitude { get; set; }

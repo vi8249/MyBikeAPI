@@ -65,9 +65,9 @@ namespace YouBikeAPI.Controllers
         }
 
         [HttpGet(Name = "GetBikes")]
-        public async Task<IActionResult> GetBikes([FromQuery] PageParameters pageParameters)
+        public async Task<IActionResult> GetBikes([FromQuery] PageParameters pageParameters, [FromQuery] string filter)
         {
-            PaginationList<Bike, BikeDto> bikes = await _bikeRepository.GetBikes(pageParameters.PageNum, pageParameters.PageSize);
+            PaginationList<Bike, BikeDto> bikes = await _bikeRepository.GetBikes(pageParameters.PageNum, pageParameters.PageSize, filter);
             if (bikes == null)
             {
                 return NotFound();
@@ -85,6 +85,12 @@ namespace YouBikeAPI.Controllers
             };
             base.Response.Headers.Add("x-pagination", JsonConvert.SerializeObject(paginationMetadata));
             return Ok(bikes);
+        }
+
+        [HttpGet("Count", Name = "GetBikesCout")]
+        public async Task<IActionResult> GetBikesCout()
+        {
+            return Ok(new { count = await _bikeRepository.GetBikesCount() });
         }
 
         [HttpGet("{id}", Name = "GetBike")]
@@ -191,15 +197,11 @@ namespace YouBikeAPI.Controllers
         public async Task<IActionResult> RentABike(int id)
         {
             string userId = _httpContextAccessor.HttpContext!.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")!.Value;
+            if (!await _bikeRepository.BikeExists(id)) return NotFound();
             bool flag = await _bikeRepository.RentBike(id, userId);
-            if (flag)
-            {
-                flag = await _bikeRepository.SaveAllAsync();
-            }
-            if (flag)
-            {
+            if (flag && await _bikeRepository.SaveAllAsync())
                 return NoContent();
-            }
+
             return BadRequest("租借失敗");
         }
 
@@ -226,7 +228,15 @@ namespace YouBikeAPI.Controllers
                 IActionResult actionResult = Ok(res.Item2);
                 result = actionResult;
             }
-            return result;
+            return Ok(result);
+        }
+
+        [HttpGet("price")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> GetPrices()
+        {
+            var prices = await _bikeRepository.GetPricesAsync();
+            return Ok(prices);
         }
     }
 }

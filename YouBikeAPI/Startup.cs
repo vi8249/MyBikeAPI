@@ -72,8 +72,10 @@ namespace YouBikeAPI
             services.AddTransient<IBikeStationRepository, BikeStationRepository>();
             services.AddTransient<IBikeRepository, BikeRepository>();
             services.AddTransient<IPaidmentService, PaidmentService>();
+            services.AddTransient<IDashboardInfo, DashboardInfo>();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddCors();
             services.AddSwaggerGen(delegate (SwaggerGenOptions c)
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
@@ -117,11 +119,18 @@ namespace YouBikeAPI
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseAuthentication();
+            app.UseCors(policy => policy.AllowAnyHeader()
+                .AllowAnyMethod()
+                .WithExposedHeaders("x-pagination")
+                .WithOrigins("https://localhost:4200"));
             app.UseAuthorization();
-            app.UseAuthorization();
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
             app.UseEndpoints(delegate (IEndpointRouteBuilder endpoints)
             {
                 endpoints.MapControllers();
+                endpoints.MapSwagger();
+                endpoints.MapFallbackToController("Index", "Fallback");
             });
         }
     }
