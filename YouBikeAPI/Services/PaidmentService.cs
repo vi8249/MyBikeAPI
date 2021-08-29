@@ -52,7 +52,7 @@ namespace YouBikeAPI.Services
             }
 
             HistoryRoute currHistoryRoute = await _context.HistoryRoutes.SingleOrDefaultAsync((HistoryRoute h) => h.ApplicationUserId == userId && h.CurrentRoute == true);
-            TimeSpan userTimeSpan = -currHistoryRoute.CreationDate.Subtract(currHistoryRoute.ReturnTime ?? DateTime.UtcNow.ToLocalTime());
+            TimeSpan userTimeSpan = -currHistoryRoute.CreationDate.Subtract(currHistoryRoute.ReturnTime ?? DateTime.UtcNow);
 
             (double, TimeSpan) apiResult = await DistanceMatrixAPI(lan, lon);
 
