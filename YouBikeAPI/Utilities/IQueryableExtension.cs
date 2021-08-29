@@ -16,8 +16,8 @@ namespace YouBikeAPI.Utilities
                 throw new InvalidOperationException("error");
             }
 
-            var result = source.Where(s => s.CreationDate.Month <= DateTime.UtcNow.ToLocalTime().AddMonths(end).Month
-                && s.CreationDate.Month > DateTime.UtcNow.ToLocalTime().AddMonths(start).Month);
+            var result = source.Where(s => s.CreationDate.Month <= DateTime.UtcNow.AddMonths(end).Month
+                && s.CreationDate.Month > DateTime.UtcNow.AddMonths(start).Month);
 
             return result;
         }
