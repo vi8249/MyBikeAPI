@@ -32,7 +32,11 @@ namespace YouBikeAPI
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<AppDbContext>();
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                    .AddRoles<IdentityRole>()
+                    .AddRoleManager<RoleManager<IdentityRole>>()
+                    .AddEntityFrameworkStores<AppDbContext>();
+
             services.AddAuthentication("Bearer").AddJwtBearer(delegate (JwtBearerOptions options)
             {
                 byte[] bytes = Encoding.UTF8.GetBytes(configuration["Authentication:SecretKey"]);
