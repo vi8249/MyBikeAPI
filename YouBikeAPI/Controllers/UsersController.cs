@@ -89,6 +89,11 @@ namespace YouBikeAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
+            if (registerDto.Email == null) return BadRequest("Email不得為空");
+            if (registerDto.Password == null) return BadRequest("密碼不得為空");
+            if (registerDto.Password != registerDto.ConfirmPassword)
+                return BadRequest("密碼不一致");
+
             ApplicationUser user = new ApplicationUser
             {
                 UserName = registerDto.Email,
