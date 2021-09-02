@@ -29,6 +29,7 @@ namespace YouBikeAPI.Data
             base.OnModelCreating(builder);
             builder.Entity<Bike>().Property((Bike b) => b.BikeType).HasConversion((BikeType b) => b.ToString(), (string b) => (BikeType)Enum.Parse(typeof(BikeType), b));
             builder.Entity<Price>().Property((Price b) => b.BikeType).HasConversion((BikeType b) => b.ToString(), (string b) => (BikeType)Enum.Parse(typeof(BikeType), b));
+
             builder.Entity(delegate (EntityTypeBuilder<ApplicationUser> u)
             {
                 u.HasMany((ApplicationUser x) => x.UserRoles).WithOne().HasForeignKey((IdentityUserRole<string> ur) => ur.UserId)

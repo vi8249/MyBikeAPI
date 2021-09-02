@@ -10,8 +10,8 @@ using YouBikeAPI.Data;
 namespace YouBikeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20210823085343_modiflied historyRoute")]
-    partial class modifliedhistoryRoute
+    [Migration("20210902075504_Initialize database")]
+    partial class Initializedatabase
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -51,7 +51,7 @@ namespace YouBikeAPI.Migrations
                         new
                         {
                             Id = "308660dc-ae51-480f-824d-7dca6714c3e2",
-                            ConcurrencyStamp = "f315434a-470e-4d71-b9c5-8fb7e9c04b7c",
+                            ConcurrencyStamp = "4ab4816a-ce67-433d-a4d0-89dc35211fa6",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -245,17 +245,17 @@ namespace YouBikeAPI.Migrations
                         {
                             Id = "90184155-dee0-40c9-bb1e-b5ed07afc04e",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "a8274719-6189-4737-ac45-3ab48422c103",
-                            CreationDate = new DateTime(2021, 8, 23, 8, 53, 42, 317, DateTimeKind.Utc).AddTicks(5590),
+                            ConcurrencyStamp = "832dbda4-c7b4-42b6-85e7-632f22e324b8",
+                            CreationDate = new DateTime(2021, 9, 2, 7, 55, 3, 258, DateTimeKind.Utc).AddTicks(8270),
                             Email = "admin@xx.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@XX.COM",
                             NormalizedUserName = "ADMIN@XX.COM",
-                            PasswordHash = "AQAAAAEAACcQAAAAEEg3Wdim620RFiE0bpV2wBsxNnwuQfA8HmSgePKJStBdP2xAN0A5iSnHwEbt2bPa8A==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEH17LGf6Ls5k2mI0/jwEmiFswluUFoiuCqagar5zMmIFAG06B4Mmmu8DtiHIjl+lVw==",
                             PhoneNumber = "123456789",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "758e29ae-88ce-4e92-a315-2253a6bcc571",
+                            SecurityStamp = "7a4aa94c-36e1-45e2-aef0-4b8c68ba27a9",
                             TwoFactorEnabled = false,
                             UserName = "admin@xx.com"
                         });
@@ -357,24 +357,22 @@ namespace YouBikeAPI.Migrations
                     b.Property<bool>("CurrentRoute")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("Destination")
+                    b.Property<Guid?>("DestinationStationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("DestinationName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ReturnTime")
+                    b.Property<DateTime?>("ReturnTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("Source")
+                    b.Property<Guid?>("SourceStationId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SourceName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("DestinationStationId");
+
+                    b.HasIndex("SourceStationId");
 
                     b.ToTable("HistoryRoutes");
                 });
@@ -516,6 +514,18 @@ namespace YouBikeAPI.Migrations
                     b.HasOne("YouBikeAPI.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("YouBikeAPI.Models.BikeStation", "DestinationStation")
+                        .WithMany()
+                        .HasForeignKey("DestinationStationId");
+
+                    b.HasOne("YouBikeAPI.Models.BikeStation", "SourceStation")
+                        .WithMany()
+                        .HasForeignKey("SourceStationId");
+
+                    b.Navigation("DestinationStation");
+
+                    b.Navigation("SourceStation");
 
                     b.Navigation("User");
                 });

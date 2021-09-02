@@ -172,8 +172,10 @@ namespace YouBikeAPI.Services
 
             var route = new HistoryRoute
             {
-                Source = station.Id,
-                SourceName = station.StationName,
+                SourceStationId = station.Id,
+                SourceStation = station,
+                DestinationStationId = null,
+                DestinationStation = null,
                 ApplicationUserId = userId,
                 BikeId = bike.Id,
                 CurrentRoute = true,
@@ -205,16 +207,22 @@ namespace YouBikeAPI.Services
             {
                 return (false, "歸還人與租借人不同");
             }
-            HistoryRoute historyRoute = await _context.HistoryRoutes.SingleOrDefaultAsync((HistoryRoute h) => h.ApplicationUserId == userId && h.CurrentRoute);
-            historyRoute.Destination = destinationId;
-            historyRoute.ReturnTime = DateTime.UtcNow;
-            BikeStation stationFrom = await _bikeStationRepository.GetBikeStationById(historyRoute.Source);
+
+            HistoryRoute historyRoute = await _context.HistoryRoutes
+                .Include(h => h.SourceStation)
+                .Include(h => h.DestinationStation)
+                .SingleOrDefaultAsync((HistoryRoute h) => h.ApplicationUserId == userId && h.CurrentRoute);
+
+            BikeStation stationFrom = await _bikeStationRepository.GetBikeStationById(historyRoute.SourceStationId);
             BikeStation stationTo = await _bikeStationRepository.GetBikeStationById(destinationId);
+            historyRoute.DestinationStation = stationTo;
+            historyRoute.ReturnTime = DateTime.UtcNow;
+
             if (stationFrom == null || stationTo == null)
             {
                 return (false, "查無此車站");
             }
-            historyRoute.DestinationName = stationTo.StationName;
+
             string lan = $"{stationFrom.Latitude},{stationFrom.Longitude}";
             string lon = $"{stationTo.Latitude},{stationTo.Longitude}";
             (bool, string) paymentResult = await _paidmentService.PayBill(userId, lan, lon);

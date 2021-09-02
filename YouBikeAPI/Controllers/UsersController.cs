@@ -22,6 +22,7 @@ using YouBikeAPI.Dtos;
 using YouBikeAPI.Helper;
 using YouBikeAPI.Models;
 using YouBikeAPI.Parameters;
+using YouBikeAPI.Services;
 
 namespace YouBikeAPI.Controllers
 {
@@ -37,6 +38,7 @@ namespace YouBikeAPI.Controllers
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUrlHelper _urlHelper;
         private readonly AppDbContext _context;
+        private readonly IBikeStationRepository _bikeStationRepository;
         private readonly IMapper _mapper;
 
         public UsersController(
@@ -47,6 +49,7 @@ namespace YouBikeAPI.Controllers
             IUrlHelperFactory urlHelperFactory,
             IActionContextAccessor actionContextAccessor,
             AppDbContext context,
+            IBikeStationRepository bikeStationRepository,
             IMapper mapper)
         {
             _configuration = configuration;
@@ -55,6 +58,7 @@ namespace YouBikeAPI.Controllers
             _httpContextAccessor = httpContextAccessor;
             _urlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
             _context = context;
+            _bikeStationRepository = bikeStationRepository;
             _mapper = mapper;
         }
 
@@ -203,7 +207,9 @@ namespace YouBikeAPI.Controllers
             var bike = await _context.Bikes.SingleOrDefaultAsync(b => b.UserId == user.Id);
 
             var histories = _context.HistoryRoutes
-                .Where((HistoryRoute h) => h.ApplicationUserId == userId)
+                .Include(h => h.SourceStation)
+                .Include(h => h.DestinationStation)
+                .Where(h => h.ApplicationUserId == userId)
                 .OrderByDescending(h => h.CreationDate);
 
             var admin = await _userManager.GetUsersInRoleAsync("Admin");
@@ -216,7 +222,7 @@ namespace YouBikeAPI.Controllers
                 Bike = bike?.Id,
                 Usage = await _context.HistoryRoutes.Where(h => h.ApplicationUserId == userId).CountAsync(),
                 HistoryRoute = await PaginationList<HistoryRoute, HistoryRouteDto>.CreateAsync(pageParameters.PageNum, pageParameters.PageSize, histories, _mapper),
-                Admin = admin?.Any(u => u.Id == user.Id)
+                Admin = admin?.Any(u => u.Id == user.Id),
             };
 
             string previousPageLink = (userInfo.HistoryRoute.HasPrevious ? GenerateGetBikesURL(pageParameters, ResourceUrlType.PreviousPage) : null);

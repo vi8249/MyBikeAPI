@@ -6,11 +6,12 @@ namespace YouBikeAPI.Dtos
     {
         public Guid Id { get; set; }
 
-        public Guid Source { get; set; }
+        public Guid SourceStationId { get; set; }
         public string SourceName { get; set; }
 
-        public Guid Destination { get; set; }
+        public Guid DestinationStationId { get; set; }
         public string DestinationName { get; set; }
+
         public decimal Cost { get; set; }
 
         public int BikeId { get; set; }
@@ -20,5 +21,10 @@ namespace YouBikeAPI.Dtos
         public DateTime BorrowTime { get; set; }
 
         public DateTime ReturnTime { get; set; }
+
+        public double SLat { get; set; }
+        public double SLng { get; set; }
+        public double DLat { get; set; }
+        public double DLng { get; set; }
     }
 }

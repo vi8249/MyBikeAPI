@@ -6,10 +6,14 @@ namespace YouBikeAPI.Models
     public class HistoryRoute : IDate
     {
         public Guid Id { get; set; }
-        public Guid Source { get; set; }
-        public string SourceName { get; set; }
-        public Guid Destination { get; set; }
-        public string DestinationName { get; set; }
+
+        public Guid? SourceStationId { get; set; }
+        public BikeStation SourceStation { get; set; }
+
+        public Guid? DestinationStationId { get; set; }
+        public BikeStation DestinationStation { get; set; }
+
+
         [Column(TypeName = "decimal(18,4)")]
         public decimal Cost { get; set; }
         [ForeignKey("ApplicationUser")]

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace YouBikeAPI.Migrations
 {
-    public partial class InitializeDatabase : Migration
+    public partial class Initializedatabase : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -264,14 +264,14 @@ namespace YouBikeAPI.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Source = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Destination = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SourceStationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    DestinationStationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Cost = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     BikeId = table.Column<int>(type: "int", nullable: false),
                     CurrentRoute = table.Column<bool>(type: "bit", nullable: false),
                     BorrowTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReturnTime = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    ReturnTime = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -282,17 +282,29 @@ namespace YouBikeAPI.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HistoryRoutes_BikeStations_DestinationStationId",
+                        column: x => x.DestinationStationId,
+                        principalTable: "BikeStations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_HistoryRoutes_BikeStations_SourceStationId",
+                        column: x => x.SourceStationId,
+                        principalTable: "BikeStations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.InsertData(
                 table: "AspNetRoles",
                 columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[] { "308660dc-ae51-480f-824d-7dca6714c3e2", "e2e65c6a-b36f-47d3-a12f-7f346fc3f77f", "Admin", "ADMIN" });
+                values: new object[] { "308660dc-ae51-480f-824d-7dca6714c3e2", "4ab4816a-ce67-433d-a4d0-89dc35211fa6", "Admin", "ADMIN" });
 
             migrationBuilder.InsertData(
                 table: "AspNetUsers",
                 columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "CreationDate", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "MoneyId", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
-                values: new object[] { "90184155-dee0-40c9-bb1e-b5ed07afc04e", 0, "1a304330-38d3-4e0e-a367-54c264d893e6", new DateTime(2021, 8, 20, 15, 31, 20, 539, DateTimeKind.Utc).AddTicks(7240), "admin@xx.com", true, false, null, null, "ADMIN@XX.COM", "ADMIN@XX.COM", "AQAAAAEAACcQAAAAEIred7eMfda2b7I/mFptAl1WptlaXVafR8NuVGolx8x95KGnJ0XzjQnM/xKEG1ixMQ==", "123456789", false, "94b43969-6469-4b62-b2a0-71c63ded007f", false, "admin@xx.com" });
+                values: new object[] { "90184155-dee0-40c9-bb1e-b5ed07afc04e", 0, "832dbda4-c7b4-42b6-85e7-632f22e324b8", new DateTime(2021, 9, 2, 7, 55, 3, 258, DateTimeKind.Utc).AddTicks(8270), "admin@xx.com", true, false, null, null, "ADMIN@XX.COM", "ADMIN@XX.COM", "AQAAAAEAACcQAAAAEH17LGf6Ls5k2mI0/jwEmiFswluUFoiuCqagar5zMmIFAG06B4Mmmu8DtiHIjl+lVw==", "123456789", false, "7a4aa94c-36e1-45e2-aef0-4b8c68ba27a9", false, "admin@xx.com" });
 
             migrationBuilder.InsertData(
                 table: "AspNetUserRoles",
@@ -369,6 +381,16 @@ namespace YouBikeAPI.Migrations
                 name: "IX_HistoryRoutes_ApplicationUserId",
                 table: "HistoryRoutes",
                 column: "ApplicationUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HistoryRoutes_DestinationStationId",
+                table: "HistoryRoutes",
+                column: "DestinationStationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_HistoryRoutes_SourceStationId",
+                table: "HistoryRoutes",
+                column: "SourceStationId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -401,13 +423,13 @@ namespace YouBikeAPI.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "BikeStations");
-
-            migrationBuilder.DropTable(
                 name: "Prices");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "BikeStations");
 
             migrationBuilder.DropTable(
                 name: "Money");

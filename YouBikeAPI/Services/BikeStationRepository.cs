@@ -94,6 +94,18 @@ namespace YouBikeAPI.Services
             BikeStation bikeStation = await _context.BikeStations
                 .Include(s => s.AvailableBikes)
                 .SingleOrDefaultAsync(s => s.Id == id);
+
+            var hisList = await _context.HistoryRoutes
+                .Where(h => h.SourceStationId == id || h.DestinationStationId == id)
+                .ToListAsync();
+            foreach (var h in hisList)
+            {
+                if (id == h.SourceStationId)
+                    h.SourceStationId = null;
+                if (id == h.DestinationStationId)
+                    h.DestinationStationId = null;
+            }
+
             _context.BikeStations.Remove(bikeStation);
         }
 

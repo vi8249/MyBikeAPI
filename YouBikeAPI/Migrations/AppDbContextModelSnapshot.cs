@@ -49,7 +49,7 @@ namespace YouBikeAPI.Migrations
                         new
                         {
                             Id = "308660dc-ae51-480f-824d-7dca6714c3e2",
-                            ConcurrencyStamp = "6889d3d0-a970-4321-ae61-1619ca4e278f",
+                            ConcurrencyStamp = "4ab4816a-ce67-433d-a4d0-89dc35211fa6",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         });
@@ -243,17 +243,17 @@ namespace YouBikeAPI.Migrations
                         {
                             Id = "90184155-dee0-40c9-bb1e-b5ed07afc04e",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "8002045d-33e2-43ef-b092-b92d4890a335",
-                            CreationDate = new DateTime(2021, 8, 27, 4, 6, 17, 746, DateTimeKind.Utc).AddTicks(4660),
+                            ConcurrencyStamp = "832dbda4-c7b4-42b6-85e7-632f22e324b8",
+                            CreationDate = new DateTime(2021, 9, 2, 7, 55, 3, 258, DateTimeKind.Utc).AddTicks(8270),
                             Email = "admin@xx.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@XX.COM",
                             NormalizedUserName = "ADMIN@XX.COM",
-                            PasswordHash = "AQAAAAEAACcQAAAAEIEzPCfORjlmXWJBqqdAO5R8WkUvaZWTOaeRI8dpo48fqrb/OJXEAfxkPRABjXAgEQ==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEH17LGf6Ls5k2mI0/jwEmiFswluUFoiuCqagar5zMmIFAG06B4Mmmu8DtiHIjl+lVw==",
                             PhoneNumber = "123456789",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "38f000d4-abd6-451e-aab8-eaf7959b4d6d",
+                            SecurityStamp = "7a4aa94c-36e1-45e2-aef0-4b8c68ba27a9",
                             TwoFactorEnabled = false,
                             UserName = "admin@xx.com"
                         });
@@ -355,24 +355,22 @@ namespace YouBikeAPI.Migrations
                     b.Property<bool>("CurrentRoute")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("Destination")
+                    b.Property<Guid?>("DestinationStationId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("DestinationName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ReturnTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("Source")
+                    b.Property<Guid?>("SourceStationId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SourceName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("DestinationStationId");
+
+                    b.HasIndex("SourceStationId");
 
                     b.ToTable("HistoryRoutes");
                 });
@@ -514,6 +512,18 @@ namespace YouBikeAPI.Migrations
                     b.HasOne("YouBikeAPI.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("YouBikeAPI.Models.BikeStation", "DestinationStation")
+                        .WithMany()
+                        .HasForeignKey("DestinationStationId");
+
+                    b.HasOne("YouBikeAPI.Models.BikeStation", "SourceStation")
+                        .WithMany()
+                        .HasForeignKey("SourceStationId");
+
+                    b.Navigation("DestinationStation");
+
+                    b.Navigation("SourceStation");
 
                     b.Navigation("User");
                 });
