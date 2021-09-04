@@ -16,8 +16,10 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using YouBikeAPI.Data;
+using YouBikeAPI.Extensions;
 using YouBikeAPI.Models;
 using YouBikeAPI.Services;
+using YouBikeAPI.SignalR;
 
 namespace YouBikeAPI
 {
@@ -32,81 +34,19 @@ namespace YouBikeAPI
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddIdentity<ApplicationUser, IdentityRole>()
-                    .AddRoles<IdentityRole>()
-                    .AddRoleManager<RoleManager<IdentityRole>>()
-                    .AddEntityFrameworkStores<AppDbContext>();
-
-            services.AddAuthentication("Bearer").AddJwtBearer(delegate (JwtBearerOptions options)
-            {
-                byte[] bytes = Encoding.UTF8.GetBytes(configuration["Authentication:SecretKey"]);
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = configuration["Authentication:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = configuration["Authentication:Audience"],
-                    ValidateLifetime = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(bytes)
-                };
-            });
-            services.AddControllers().ConfigureApiBehaviorOptions(delegate (ApiBehaviorOptions setupAction)
-            {
-                setupAction.InvalidModelStateResponseFactory = delegate (ActionContext context)
-                {
-                    ValidationProblemDetails validationProblemDetails = new ValidationProblemDetails(context.ModelState)
-                    {
-                        Title = "資料驗證失敗",
-                        Status = 422,
-                        Detail = "請看下方詳細說明",
-                        Instance = (string)context.HttpContext.Request.Path
-                    };
-                    validationProblemDetails.Extensions.Add("traceId", context.HttpContext.TraceIdentifier);
-                    return new UnprocessableEntityObjectResult(validationProblemDetails)
-                    {
-                        ContentTypes = { "application/problem+json" }
-                    };
-                };
-            });
+            services.AddIdentitySevices(configuration);
+            services.AddValidationServices();
             services.AddHttpClient();
             services.AddDbContext<AppDbContext>(delegate (DbContextOptionsBuilder options)
             {
                 options.UseSqlServer(configuration["DbContext:ConnectionString"]);
             });
-            services.AddTransient<IBikeStationRepository, BikeStationRepository>();
-            services.AddTransient<IBikeRepository, BikeRepository>();
-            services.AddTransient<IPaidmentService, PaidmentService>();
-            services.AddTransient<IDashboardInfo, DashboardInfo>();
+            services.AddRepositories();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddCors();
-            services.AddSwaggerGen(delegate (SwaggerGenOptions c)
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo
-                {
-                    Title = "YouBike API",
-                    Version = "v1"
-                });
-                OpenApiSecurityScheme openApiSecurityScheme = new OpenApiSecurityScheme
-                {
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-                    Name = "Authorization",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = "Bearer"
-                    }
-                };
-                c.AddSecurityDefinition("Bearer", openApiSecurityScheme);
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement {
-                {
-                    openApiSecurityScheme,
-                    new string[1] { "Bearer" }
-                } });
-            });
+            services.AddSignalR();
+            services.AddSwagger();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -130,9 +70,11 @@ namespace YouBikeAPI
             app.UseAuthorization();
             app.UseDefaultFiles();
             app.UseStaticFiles();
+
             app.UseEndpoints(delegate (IEndpointRouteBuilder endpoints)
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<PresenceHub>("hubs/presence");
                 endpoints.MapSwagger();
                 endpoints.MapFallbackToController("Index", "Fallback");
             });
