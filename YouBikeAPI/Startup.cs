@@ -34,6 +34,7 @@ namespace YouBikeAPI
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<PresenceTracker>();
             services.AddIdentitySevices(configuration);
             services.AddValidationServices();
             services.AddHttpClient();
@@ -65,6 +66,7 @@ namespace YouBikeAPI
             app.UseAuthentication();
             app.UseCors(policy => policy.AllowAnyHeader()
                 .AllowAnyMethod()
+                .AllowCredentials()
                 .WithExposedHeaders("x-pagination")
                 .WithOrigins("https://localhost:4200"));
             app.UseAuthorization();
@@ -75,6 +77,7 @@ namespace YouBikeAPI
             {
                 endpoints.MapControllers();
                 endpoints.MapHub<PresenceHub>("hubs/presence");
+                endpoints.MapHub<DashboardHub>("hubs/dashboard");
                 endpoints.MapSwagger();
                 endpoints.MapFallbackToController("Index", "Fallback");
             });

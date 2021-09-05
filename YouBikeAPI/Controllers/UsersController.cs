@@ -68,7 +68,7 @@ namespace YouBikeAPI.Controllers
         {
             if (!(await _signInManager.PasswordSignInAsync(loginDto.Email, loginDto.Password, isPersistent: false, lockoutOnFailure: false)).Succeeded)
             {
-                return BadRequest("login Failed!");
+                return BadRequest("登入失敗");
             }
             ApplicationUser user = await _userManager.FindByNameAsync(loginDto.Email);
             var admins = await _userManager.GetUsersInRoleAsync("Admin");
@@ -161,7 +161,7 @@ namespace YouBikeAPI.Controllers
             }
             if (await _context.SaveChangesAsync() > 0)
             {
-                return NoContent();
+                return Ok(new { value = "儲值成功" });
             }
             return BadRequest("儲值失敗");
         }

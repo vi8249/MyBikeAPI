@@ -200,7 +200,7 @@ namespace YouBikeAPI.Controllers
             if (!await _bikeRepository.BikeExists(id)) return NotFound();
             bool flag = await _bikeRepository.RentBike(id, userId);
             if (flag && await _bikeRepository.SaveAllAsync())
-                return NoContent();
+                return Ok(new { value = "租借成功" });
 
             return BadRequest("租借失敗");
         }
@@ -211,24 +211,14 @@ namespace YouBikeAPI.Controllers
         {
             string userId = _httpContextAccessor.HttpContext!.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")!.Value;
             (bool, string) res = await _bikeRepository.ReturnBike(id, stationId, userId);
-            bool item = res.Item1;
-            bool flag = item;
-            if (flag)
-            {
-                flag = await _bikeRepository.SaveAllAsync();
-            }
-            IActionResult result;
-            if (!flag)
-            {
-                IActionResult actionResult = BadRequest(res.Item2);
-                result = actionResult;
-            }
-            else
-            {
-                IActionResult actionResult = Ok(res.Item2);
-                result = actionResult;
-            }
-            return Ok(result);
+
+            if (!res.Item1)
+                return BadRequest(res.Item2);
+
+            if (!await _bikeRepository.SaveAllAsync())
+                return BadRequest("歸還失敗");
+
+            return Ok(new { value = res.Item2 });
         }
 
         [HttpGet("price")]
