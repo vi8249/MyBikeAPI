@@ -215,13 +215,15 @@ namespace YouBikeAPI.Services
 
             BikeStation stationFrom = await _bikeStationRepository.GetBikeStationById(historyRoute.SourceStationId);
             BikeStation stationTo = await _bikeStationRepository.GetBikeStationById(destinationId);
-            historyRoute.DestinationStation = stationTo;
-            historyRoute.ReturnTime = DateTime.UtcNow;
+
+            if (stationTo.BikesInsideParkingLot >= stationTo.TotalParkingSpace)
+                return (false, "此車站已無停車空間");
 
             if (stationFrom == null || stationTo == null)
-            {
                 return (false, "查無此車站");
-            }
+
+            historyRoute.DestinationStation = stationTo;
+            historyRoute.ReturnTime = DateTime.UtcNow;
 
             string lan = $"{stationFrom.Latitude},{stationFrom.Longitude}";
             string lon = $"{stationTo.Latitude},{stationTo.Longitude}";
